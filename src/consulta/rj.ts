@@ -1,26 +1,27 @@
-import axios, { AxiosRequestConfig } from "axios";
-import * as cheerio from "cheerio";
-import moment from "moment";
-import nfeDados, { ICabecalho, IEmitente, IProduto } from "../nfe-dados";
-import qs from "querystring";
+import axios, { AxiosRequestConfig } from 'axios';
+import * as cheerio from 'cheerio';
+import moment from 'moment';
+import nfeDados, { ICabecalho, IEmitente, IProduto } from '../nfe-dados';
+import querystring from 'querystring';
 
 export default class Consulta {
   private axiosConfig: AxiosRequestConfig = {
-    method: "get",
+    method: 'get',
     params: {},
     timeout: 1000 * 60,
-    url: "http://www4.fazenda.rj.gov.br/consultaNFCe/QRCode",
+    url: 'http://www4.fazenda.rj.gov.br/consultaNFCe/QRCode',
   };
   private html!: CheerioStatic;
-  private code: string = "";
+  private code: string = '';
   constructor(qrCodeURL: URL) {
     const chaveNFe: string =
-      qrCodeURL.searchParams.get("chNFe") ||
-      qrCodeURL.searchParams.get("p") ||
-      "";
+      qrCodeURL.searchParams.get('chNFe') ||
+      qrCodeURL.searchParams.get('p') ||
+      '';
 
-    if (!chaveNFe.length)
-      throw new Error("Não foi possível detectar a chave do parâmetro");
+    if (!chaveNFe.length) {
+      throw new Error('Não foi possível detectar a chave do parâmetro');
+    }
 
     this.axiosConfig.params.p = this.code = chaveNFe;
     this.axiosConfig.params.HML = false;
@@ -43,12 +44,8 @@ export default class Consulta {
             emitente: this.getEmitente(),
             produtos: this.getProdutos(),
           };
-        }
-      ).catch(() => {
-        throw new Error(
-          'ERRO PAIZAO',
-        );
-      });
+        },
+      );
   }
 
   /**
@@ -196,13 +193,13 @@ export default class Consulta {
     );
   }
 
-  private filter(word : string): string{
+  private filter(word : string): string {
     return word
       .replace(/\t/g, '')
       .replace(/\n/g, '')
       .replace('&#xFFFD;', 'ó')
-      .trim()
-      
+      .trim();
+
   }
 
   /**
@@ -211,14 +208,14 @@ export default class Consulta {
   private fetchToken(): any {
     return axios(this.axiosConfig)
       .then((res) => {
-        var $ = cheerio.load(res.data);
+        const $ = cheerio.load(res.data);
         return {
           viewState: $('input[id="javax.faces.ViewState"]').val(),
-          jsession: res.headers["set-cookie"][0].split('"')[1],
+          jsession: res.headers['set-cookie'][0].split('"')[1],
         };
       })
       .catch(() => {
-        throw new Error("Não foi possível obter o token de acesso");
+        throw new Error('Não foi possível obter o token de acesso');
       });
   }
 
@@ -227,27 +224,26 @@ export default class Consulta {
    */
   private fetchData(jsession: string, viewState: string): any {
 
-    var config: AxiosRequestConfig = {
-      method: "post",
+    const config: AxiosRequestConfig = {
+      method: 'post',
       url:
-        "http://www4.fazenda.rj.gov.br/consultaNFCe/paginas/consultaQRCode.faces;jsessionid=" +
-        jsession,
+        `http://www4.fazenda.rj.gov.br/consultaNFCe/paginas/consultaQRCode.faces;jsessionid=${jsession}`,
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Cookie: 'JSESSIONID="' + jsession + '"; f5_cspm=1234;',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Cookie: `JSESSIONID="${jsession}"; f5_cspm=1234;`,
       },
-      data: qs.stringify({
-        formulario: "formulario",
-        "javax.faces.ViewState": viewState,
-        btSubmitQRCode: "btSubmitQRCode",
+      data: querystring.stringify({
+        formulario: 'formulario',
+        'javax.faces.ViewState': viewState,
+        btSubmitQRCode: 'btSubmitQRCode',
         p: this.code,
       }),
     };
 
     return axios(config)
-      .then((res) => res.data)
+      .then(res => res.data)
       .catch(() => {
-        throw new Error("Não foi possível efetuar o download da NFE");
+        throw new Error('Não foi possível efetuar o download da NFE');
       });
   }
 }
