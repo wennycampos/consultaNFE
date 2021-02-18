@@ -27,7 +27,8 @@
   "dependencies": {
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.3",
-    "moment": "^2.27.0"
+    "moment": "^2.27.0",
+    "qs": "^6.9.6"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.21",
